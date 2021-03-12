@@ -57,6 +57,8 @@ function draw() {
   }
 }
 
+//Hawk
+
 function Blurb(x, y) {
   this.hawk = false;
   this.x = x;
@@ -71,15 +73,40 @@ function Blurb(x, y) {
   this.survive = true;
 
   this.eat = function () {
-    if (food[this.food].visited == 2) {
-      this.reproduce = false;
-      this.survive = true;
-    } else if (food[this.food].visited == 1) {
+    if (food[this.food].visited == 1) {
       this.reproduce = true;
       this.survive = true;
+    } else if (food[this.food].visited == 2 && food[this.food].hawkCount == 0) {
+      this.reproduce = false;
+      this.survive = true;
+    } else if (
+      food[this.food].visited == 2 &&
+      food[this.food].hawkCount == 1 &&
+      !this.hawk
+    ) {
+      this.reproduce = false;
+      this.survive = this.randomSurvive();
+    } else if (
+      food[this.food].visited == 2 &&
+      food[this.food].hawkCount == 1 &&
+      this.hawk
+    ) {
+      this.reproduce = this.randomReproduce();
+      this.survive = false;
+    } else if (
+      food[this.food].visited == 2 &&
+      food[this.food].hawkCount == 2 &&
+      this.hawk
+    ) {
+      this.reproduce = false;
+      this.survive = false;
     }
-    if (this.reproduce) {
+    if (this.reproduce && !this.hawk) {
       blurbs[currentCount] = new Blurb(5, currentCount * 20 + 5);
+      currentCount++;
+    } else if (this.reproduce && this.hawk) {
+      blurbs[currentCount] = new Blurb(5, currentCount * 20 + 5);
+      blurbs[currentCount].hawk = true;
       currentCount++;
     }
     // var currentTime = second();
@@ -103,7 +130,12 @@ function Blurb(x, y) {
       rect(x, y, 10, 10);
     } else if (this.eating) {
       noStroke();
-      fill(0, 0, 255);
+      if (this.hawk) {
+        fill(255, 0, 0);
+      } else {
+        fill(0, 0, 255);
+      }
+
       if (this.top) {
         rect(this.foodx - 20, this.foody, 10, 10);
       } else {
@@ -117,7 +149,7 @@ function Blurb(x, y) {
     // console.log(this.food);
     if (!food[this.food].isFull()) {
       this.eaten = true;
-      food[this.food].blurbEat();
+      food[this.food].blurbEat(this.hawk);
     } else {
       var hasFood = false;
       while (!hasFood) {
@@ -125,7 +157,7 @@ function Blurb(x, y) {
         if (!food[this.food].isFull()) {
           hasFood = true;
           this.eaten = true;
-          food[this.food].blurbEat();
+          food[this.food].blurbEat(this.hawk);
         }
       }
     }
@@ -144,7 +176,27 @@ function Blurb(x, y) {
 
   this.reset = function () {
     this.reproduce = false;
-    this.top = false;
+    // this.top = false;
+  };
+
+  this.randomSurvive = function () {
+    var survive = round(random(0, 1));
+    if (survive == 1) {
+      return true;
+    } else {
+      console.log("hawk died!!!!");
+      return false;
+    }
+  };
+
+  this.randomReproduce = function () {
+    var reproduce = round(random(0, 1));
+    if (reproduce == 1) {
+      return true;
+    } else {
+      console.log("Did not reproduce!!!!");
+      return false;
+    }
   };
 }
 
@@ -153,6 +205,7 @@ function Food(x, y) {
   this.y = y;
   this.visited = 0;
   this.top = false;
+  this.hawkCount = 0;
 
   this.isFull = function () {
     if (this.visited >= 2) {
@@ -161,8 +214,15 @@ function Food(x, y) {
       return false;
     }
   };
-  this.blurbEat = function () {
+  this.blurbEat = function (hawk) {
     this.visited++;
+    if (hawk) {
+      this.hawkCount++;
+    }
+  };
+
+  this.getHawkCount = function () {
+    return this.hawkCount;
   };
 
   this.drawFood = function () {
@@ -187,6 +247,6 @@ function Food(x, y) {
 
   this.reset = function () {
     this.visited = 0;
-    this.top = false;
+    // this.top = false;
   };
 }
